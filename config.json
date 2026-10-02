@@ -1,0 +1,75 @@
+{
+  "student": "Lorenzo",
+  "studentId": "fcee8cb1-c13e-4d35-8395-cab17a708c66",
+  "updatedAt": "2026-10-02",
+  "rates": {
+    "Math": {
+      "xp": 7,
+      "unit": "lessons"
+    },
+    "Reading": {
+      "xp": 14,
+      "unit": "lessons"
+    },
+    "Language": {
+      "xp": 33,
+      "unit": "lessons"
+    },
+    "Science": {
+      "xp": 29,
+      "unit": "lessons"
+    },
+    "Vocabulary": {
+      "xp": 5,
+      "unit": "activities"
+    },
+    "FastMath": {
+      "xp": 1.6,
+      "unit": "rounds"
+    }
+  },
+  "courses": [
+    {
+      "subject": "Vocabulary",
+      "course": "[Vocabloco] Vocabulary G8 hole-filling",
+      "total": 105,
+      "kind": "end",
+      "testName": "Vocabulary G8 test",
+      "label": "VocabLoco Grade 8"
+    },
+    {
+      "subject": "Science",
+      "course": "[Timeback Learn] Science G9 hole-filling",
+      "total": 203,
+      "kind": "end",
+      "testName": "Science G9 test",
+      "label": "Science Grade 9 (TimeBack Learn)"
+    },
+    {
+      "subject": "Reading",
+      "course": "Alpha Read - Grade 9",
+      "total": 1674,
+      "kind": "estimate",
+      "estimateAt": 395,
+      "testName": "Reading G9 test",
+      "note": "Estimate: your Grade 8 test showed up after 395 XP",
+      "label": "Alpha Read Grade 9"
+    },
+    {
+      "subject": "Language",
+      "course": "Edmentum - English 10",
+      "total": 1438,
+      "kind": "end",
+      "testName": "English 10 end-of-course test",
+      "label": "English 10 (Edmentum)"
+    },
+    {
+      "subject": "Math",
+      "course": "Math Academy - Geometry",
+      "total": 2226,
+      "kind": "end",
+      "testName": "Geometry end-of-course test",
+      "label": "Math Academy Geometry"
+    }
+  ]
+}

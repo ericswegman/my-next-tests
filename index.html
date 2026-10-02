@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lorenzo's Next Tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one step per screen, week header on top, Back/Next at the foot. Tests are summits; XP to go is the climb. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#15202b; --muted:#5a6876; --line:#d8dee5;
+  --accent:#1d4e6e; --accent-ink:#ffffff; --track:#e4e9ee; --good:#1e7a4f; --warn:#a15c00;
+  --display:"Archivo",system-ui,sans-serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --math:#5fc0ef; --fastmath:#14439f; --reading:#60b29e; --language:#a99fe8; --science:#d9480f; --vocab:#fbbf24; --writing:#fe94c2;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f1720; --surface:#17222d; --ink:#e8eef4; --muted:#9aa9b7; --line:#2a3846;
+  --accent:#7cc0e8; --accent-ink:#0b1620; --track:#243240; --good:#5fd39a; --warn:#f0b35a; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 32px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 16px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-stretch:112%;font-weight:850;font-size:clamp(28px,6vw,40px);line-height:1.05;margin:2px 0 0;text-wrap:balance}
+h2{font-family:var(--display);font-stretch:105%;font-weight:800;font-size:clamp(22px,4.6vw,28px);line-height:1.15;margin:0;text-wrap:balance}
+.fresh{font-size:13px;color:var(--muted)}
+button{font:inherit;cursor:pointer;color:inherit}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 14px;font-weight:700}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible,.pick:focus-visible,.chip:focus-visible,.step:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.small{font-size:14px;padding:6px 12px}
+.steps{display:flex;gap:6px}
+.steps span{flex:1;height:5px;border-radius:3px;background:var(--track)}
+.steps span.on{background:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:flex;flex-direction:column;gap:18px;min-height:340px}
+.lede{color:var(--muted);margin:0;max-width:60ch}
+.nav{display:flex;justify-content:space-between;gap:12px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.total{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.total .big{font-family:var(--display);font-weight:900;font-stretch:118%;font-size:clamp(48px,12vw,72px);line-height:1}
+.total .of{font-family:var(--mono);color:var(--muted);font-size:20px}
+.bar{height:16px;border-radius:8px;background:var(--track);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar i.plan{background:repeating-linear-gradient(45deg,var(--accent) 0 6px,transparent 6px 10px);opacity:.55}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.col{width:100%;max-width:44px;height:120px;background:var(--track);border-radius:6px;display:flex;flex-direction:column-reverse;overflow:hidden}
+.col i{display:block;width:100%}
+.day .lab{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.day .val{font-family:var(--mono);font-size:13px;font-weight:700;min-height:1.2em}
+.day.today .lab{color:var(--ink);font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.tests{display:flex;flex-direction:column;gap:8px}
+.tline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px}
+.pill{font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.pass{color:var(--good)} .pill.half{color:var(--warn)}
+.list{display:flex;flex-direction:column;gap:12px}
+.summit{display:grid;grid-template-columns:8px 1fr;gap:0 14px;border:1px solid var(--line);border-radius:12px;padding:14px 16px 14px 0;overflow:hidden;background:var(--surface);text-align:left}
+.summit .stripe{border-radius:0 4px 4px 0}
+.summit .body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.srow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sname{font-family:var(--display);font-weight:800;font-stretch:105%;font-size:19px}
+.sxp{font-family:var(--mono);font-weight:700;font-size:18px;white-space:nowrap}
+.meta{font-size:14px;color:var(--muted)}
+.mini{height:8px;border-radius:4px;background:var(--track);overflow:hidden}
+.mini i{display:block;height:100%}
+.est{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)}
+.pick{all:unset;display:block;cursor:pointer;border-radius:12px}
+.pick[aria-pressed="true"] .summit{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.plan{border-radius:12px;background:var(--track);padding:16px;display:flex;flex-direction:column;gap:6px}
+.plan .big{font-family:var(--display);font-weight:900;font-stretch:115%;font-size:clamp(28px,7vw,40px);line-height:1.05}
+.foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin:0}
+.chips{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.chip .d{font-family:var(--mono);font-size:12px;font-weight:700}
+.chip .x{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"] .x{color:var(--accent-ink)}
+.chip.past{opacity:.6}
+.rows{display:flex;flex-direction:column;gap:8px}
+.prow{display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px}
+.prow .sw{width:10px;height:28px;border-radius:3px}
+.prow .what{min-width:0}
+.prow .what b{display:block}
+.counter{display:flex;align-items:center;gap:6px}
+.step{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:20px;line-height:1}
+.counter .n{font-family:var(--mono);font-weight:700;font-size:20px;min-width:2ch;text-align:center}
+.warn{border-left:4px solid var(--warn);padding:8px 12px;background:var(--track);border-radius:0 8px 8px 0;font-size:14px}
+.rules{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start}
+.rules .n{font-family:var(--display);font-weight:900;font-size:28px;color:var(--accent);line-height:1}
+.rules strong{display:block;font-size:18px}
+.note{border:1px dashed var(--line);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--muted)}
+.empty{color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:480px){.days,.chips{gap:4px}.panel{padding:18px 14px}}
+@media (prefers-reduced-motion:no-preference){.bar i,.mini i,.col i{transition:all .4s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" id="weekLabel">This week</div>
+      <h1>Lorenzo's Next Tests</h1>
+    </div>
+    <div class="fresh" id="fresh">Loading your numbers…</div>
+  </header>
+  <div class="steps" id="steps" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  <section class="panel" id="panel" aria-live="polite"></section>
+  <div class="nav">
+    <button class="btn" id="back" type="button">Back</button>
+    <button class="btn primary" id="next" type="button">Next</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const GOAL = 600;
+const COUNTING = ["Math","Reading","Language","Science","Vocabulary","FastMath"];
+const COLOR = {Math:"var(--math)",FastMath:"var(--fastmath)",Reading:"var(--reading)",Language:"var(--language)",Science:"var(--science)",Vocabulary:"var(--vocab)",Writing:"var(--writing)"};
+const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const DOW_LONG = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const STAR = "* Completed lessons means lessons you pass with 80% or more. A failed lesson earns 0 XP and a redo pays half, so every failed lesson adds to this number.";
+
+/* ---------- dates (Eastern time) ---------- */
+const TODAY = new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+function addDays(iso,n){ const d=new Date(iso+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function dowIndex(iso){ return (new Date(iso+"T12:00:00Z").getUTCDay()+6)%7; }
+const MONDAY = addDays(TODAY,-dowIndex(TODAY));
+const PREV_MONDAY = addDays(MONDAY,-7);
+const TODAY_I = dowIndex(TODAY);
+const DAYS_LEFT = 7 - TODAY_I;
+function niceDate(iso,opts){ return new Date(iso+"T12:00:00Z").toLocaleDateString("en-US",Object.assign({timeZone:"UTC"},opts||{month:"long",day:"numeric"})); }
+document.getElementById("weekLabel").textContent = "Week of Monday, " + niceDate(MONDAY);
+
+/* ---------- helpers ---------- */
+const $ = (s)=>document.querySelector(s);
+function el(tag,attrs,kids){
+  const n=document.createElement(tag);
+  if(attrs) for(const k in attrs){ if(k==="text") n.textContent=attrs[k]; else n.setAttribute(k,attrs[k]); }
+  (kids||[]).forEach(c=>n.append(c));
+  return n;
+}
+const fmt=(n)=>Math.round(n).toLocaleString("en-US");
+const SINGULAR={lessons:"lesson",activities:"activity",rounds:"round",days:"day"};
+const plural=(n,w)=> n===1 ? (SINGULAR[w]||w.replace(/s$/,"")) : w;
+
+/* ---------- saved plan (this device only) ---------- */
+const KEY = "next-tests:v1:" + MONDAY;
+function loadSaved(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({target:state.target, plan:state.plan})); }catch(e){} }
+
+const saved = loadSaved();
+const state = {step:0, cfg:null, data:null, error:null, target:saved.target||null, plan:saved.plan||{}, planDay:TODAY, updatedAt:null, generatedFor:null};
+
+/* ---------- data ---------- */
+function shape(rows){
+  const days={}, course={}, pace={}, tests=[];
+  rows.forEach(r=>{
+    const v=Number(r.v)||0;
+    if(r.kind==="day"){ days[r.d]=days[r.d]||{}; days[r.d][r.s]=(days[r.d][r.s]||0)+v; }
+    else if(r.kind==="course"){ course[r.c]=(course[r.c]||0)+v; }
+    else if(r.kind==="pace"){ pace[r.s]=(pace[r.s]||0)+v/14; }
+    else if(r.kind==="test"){ tests.push({d:r.d,s:r.s,name:r.c,xp:v,pct:r.w===""||r.w==null?null:Number(r.w)}); }
+  });
+  tests.sort((a,b)=>a.d<b.d?-1:1);
+  return {days,course,pace,tests};
+}
+async function boot(){
+  try{
+    const [cfg,data] = await Promise.all([
+      fetch("config.json",{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("config"); return r.json(); }),
+      fetch("data.json",{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("data"); return r.json(); })
+    ]);
+    state.cfg=cfg; state.data=shape(data.rows||[]); state.updatedAt=data.updatedAt; state.generatedFor=data.generatedFor;
+  }catch(e){ state.error=e; }
+  setFresh(); render();
+}
+function setFresh(){
+  const f=$("#fresh");
+  if(state.error){ f.textContent="Couldn't load your numbers. Refresh the page."; return; }
+  if(!state.updatedAt) return;
+  const when=new Date(state.updatedAt).toLocaleString("en-US",{timeZone:"America/New_York",weekday:"short",hour:"numeric",minute:"2-digit"});
+  f.textContent="Numbers from TimeBack, updated "+when+". They run a few hours behind.";
+}
+
+/* ---------- derived ---------- */
+function actual(iso,sub){ const d=state.data && state.data.days[iso]; return d ? (d[sub]||0) : 0; }
+function actualDay(iso){ return COUNTING.reduce((a,s)=>a+actual(iso,s),0); }
+function rate(sub){ return (state.cfg && state.cfg.rates[sub]) || {xp:10,unit:"lessons"}; }
+function plannedXp(iso,sub){ const p=state.plan[iso]; return p && p[sub] ? p[sub]*rate(sub).xp : 0; }
+function plannedDay(iso){ return COUNTING.reduce((a,s)=>a+plannedXp(iso,s),0); }
+function isPast(iso){ return iso < TODAY; }
+function weekDays(){
+  const out=[];
+  for(let i=0;i<7;i++){
+    const iso=addDays(MONDAY,i);
+    const parts=[]; let total=0;
+    COUNTING.forEach(s=>{ const v=actual(iso,s); if(v>0){ total+=v; parts.push({s,v}); } });
+    out.push({iso,i,total,parts,future:iso>TODAY});
+  }
+  return out;
+}
+function lastWeekTotal(){ let t=0; for(let i=0;i<7;i++) t+=actualDay(addDays(PREV_MONDAY,i)); return t; }
+function summits(){
+  if(!state.cfg||!state.data) return [];
+  return state.cfg.courses.map(c=>{
+    const earned=state.data.course[c.course]||0;
+    const mark=c.kind==="estimate"?c.estimateAt:c.total;
+    const toGo=Math.max(0,mark-earned);
+    const perDay=state.data.pace[c.subject]||0;
+    const days=perDay>0.5?Math.ceil(toGo/perDay):null;
+    const r=rate(c.subject);
+    const lessons=toGo>0?Math.max(1,Math.ceil(toGo/r.xp)):0;
+    return Object.assign({},c,{earned,mark,toGo,perDay,days,lessons,unit:r.unit});
+  }).sort((a,b)=>a.toGo-b.toGo);
+}
+const lessonsText=(n,unit)=>`${n} completed ${plural(n,unit)}*`;
+
+/* ---------- screens ---------- */
+function blocked(p){
+  if(state.error){ p.append(el("p",{class:"empty",text:"Your numbers didn't load. Refresh the page to try again."})); return true; }
+  if(!state.data){ p.append(el("p",{class:"empty",text:"Loading your numbers…"})); return true; }
+  return false;
+}
+
+function screenWeek(p){
+  p.append(el("h2",{text:"Your week, Monday to Sunday"}));
+  p.append(el("p",{class:"lede",text:"Every day counts, weekends too. Here's how this week is stacking up toward 600 XP. Tests count."}));
+  if(blocked(p)) return;
+  const days=weekDays();
+  const total=days.reduce((a,d)=>a+d.total,0);
+  const left=Math.max(0,GOAL-total);
+  p.append(el("div",{class:"total"},[el("span",{class:"big num",text:fmt(total)}),el("span",{class:"of",text:"/ 600 XP"})]));
+  const bar=el("div",{class:"bar",role:"img","aria-label":fmt(total)+" of 600 XP"});
+  const byS={}; days.forEach(d=>d.parts.forEach(x=>{ byS[x.s]=(byS[x.s]||0)+x.v; }));
+  COUNTING.forEach(s=>{ if(byS[s]){ const i=el("i"); i.style.width=Math.min(100,byS[s]/GOAL*100)+"%"; i.style.background=COLOR[s]; bar.append(i); } });
+  p.append(bar);
+  p.append(el("p",{style:"margin:0;font-weight:700",text: left===0 ? "You've cleared 600 this week. Anything more is extra."
+    : `${fmt(left)} XP to go with ${DAYS_LEFT} ${plural(DAYS_LEFT,"days")} left, today included. That's about ${fmt(Math.ceil(left/DAYS_LEFT))} a day.`}));
+  const max=Math.max(150,...days.map(d=>d.total));
+  const grid=el("div",{class:"days"});
+  days.forEach(d=>{
+    const col=el("div",{class:"col"});
+    d.parts.forEach(x=>{ const i=el("i",{title:`${x.s} ${fmt(x.v)}`}); i.style.height=(x.v/max*100)+"%"; i.style.background=COLOR[x.s]; col.append(i); });
+    grid.append(el("div",{class:"day"+(d.iso===TODAY?" today":"")},[el("span",{class:"val",text:d.future?"":fmt(d.total)}),col,el("span",{class:"lab",text:DOW[d.i]})]));
+  });
+  p.append(grid);
+  const lg=el("div",{class:"legend"}); COUNTING.forEach(s=>{ const b=el("b"); b.style.background=COLOR[s]; lg.append(el("span",{},[b,s])); }); p.append(lg);
+  const wk=state.data.tests.filter(t=>t.d>=MONDAY);
+  if(wk.length){
+    const box=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:"Tests you took this week"})]);
+    wk.forEach(t=>{
+      const passed=t.pct!=null&&t.pct>=90;
+      box.append(el("div",{class:"tline"},[
+        el("span",{text:`${niceDate(t.d,{weekday:"short"})} · ${t.name}`}),
+        el("span",{class:"pill "+(passed?"pass":"half"),text:t.pct==null?`${fmt(t.xp)} XP`:`${t.pct}% · ${passed?"passed":"retake"}`})
+      ]));
+    });
+    p.append(box);
+  }
+  p.append(el("p",{class:"meta",style:"margin:0",text:`Last week you finished on ${fmt(lastWeekTotal())} XP.`}));
+}
+
+function summitCard(x){
+  const body=el("div",{class:"body"});
+  body.append(el("div",{class:"srow"},[el("span",{class:"sname",text:x.testName}),el("span",{class:"sxp",text:x.toGo===0?"Ready":`${fmt(x.toGo)} XP to go`})]));
+  const m=el("div",{class:"mini",role:"img","aria-label":`${fmt(x.earned)} of ${fmt(x.mark)} XP`});
+  const i=el("i"); i.style.width=(x.mark>0?Math.min(100,x.earned/x.mark*100):0)+"%"; i.style.background=COLOR[x.subject]; m.append(i); body.append(m);
+  body.append(el("div",{class:"meta",text:`${x.subject} · ${fmt(x.earned)} of ${fmt(x.mark)} XP in ${x.label||x.course}`}));
+  let line;
+  if(x.toGo===0) line="You've done the work. Watch for the test to show up.";
+  else if(x.days!=null && x.days<=60) line=`About ${lessonsText(x.lessons,x.unit)}. At your pace over the last two weeks (${fmt(x.perDay)} XP a day) that's about ${x.days} ${plural(x.days,"days")}.`;
+  else if(x.days!=null) line=`About ${lessonsText(x.lessons,x.unit)}. At your pace over the last two weeks that's more than two months, so this is a long climb.`;
+  else line=`About ${lessonsText(x.lessons,x.unit)}. You haven't done ${x.subject} in the last two weeks, so this one is waiting on you.`;
+  body.append(el("div",{class:"meta",style:"color:var(--ink)",text:line}));
+  if(x.kind==="estimate") body.append(el("div",{class:"est",text:x.note||"Estimate"}));
+  const card=el("div",{class:"summit"}); const st=el("div",{class:"stripe"}); st.style.background=COLOR[x.subject];
+  card.append(st,body); return card;
+}
+
+function screenSummits(p){
+  p.append(el("h2",{text:"How far you are from each test"}));
+  p.append(el("p",{class:"lede",text:"Closest first. Finish the XP in a course and its test unlocks."}));
+  if(blocked(p)) return;
+  const list=el("div",{class:"list"}); summits().forEach(x=>list.append(summitCard(x))); p.append(list);
+  p.append(el("p",{class:"foot",text:STAR}));
+}
+
+function screenPick(p){
+  p.append(el("h2",{text:"Which test are you going for this week?"}));
+  p.append(el("p",{class:"lede",text:"Pick one. You'll see what it takes each day to get there by Sunday."}));
+  if(blocked(p)) return;
+  const all=summits();
+  const t=all.find(x=>x.subject===state.target);
+  if(t){
+    const box=el("div",{class:"plan"});
+    if(t.toGo===0){
+      box.append(el("div",{class:"big",text:"Ready now"}));
+      box.append(el("div",{text:`${t.testName}: the work is done. Take it first thing tomorrow.`}));
+    }else{
+      const perDay=Math.ceil(t.toGo/DAYS_LEFT);
+      const lessonsDay=Math.max(1,Math.ceil(perDay/rate(t.subject).xp));
+      box.append(el("div",{class:"eyebrow",text:`${t.subject} · by Sunday, ${niceDate(addDays(MONDAY,6))}`}));
+      box.append(el("div",{class:"big",text:`${lessonsText(lessonsDay,t.unit)} a day`}));
+      let line=`That's about ${fmt(perDay)} XP a day for ${DAYS_LEFT} ${plural(DAYS_LEFT,"days")}.`;
+      if(perDay>75){
+        const steady=Math.max(t.perDay,25), wk=Math.round(steady*DAYS_LEFT);
+        line+=` That's more than one week's climb. At ${fmt(steady)} XP a day you'd be about ${fmt(Math.max(0,t.toGo-wk))} XP away by next Monday.`;
+      }
+      box.append(el("div",{text:line}));
+    }
+    p.append(box);
+  }
+  const list=el("div",{class:"list"});
+  all.forEach(x=>{
+    const b=el("button",{class:"pick",type:"button","aria-pressed":String(x.subject===state.target)});
+    b.append(summitCard(x));
+    b.addEventListener("click",()=>{ state.target=x.subject; save(); render(); });
+    list.append(b);
+  });
+  p.append(list);
+  p.append(el("p",{class:"foot",text:STAR}));
+}
+
+function starterPlan(){
+  const weekday={Math:3,Reading:2,Language:1,Science:1,Vocabulary:1,FastMath:3};
+  const weekend={Math:2,Reading:2};
+  for(let i=TODAY_I;i<7;i++){
+    const iso=addDays(MONDAY,i);
+    if(!state.plan[iso] || !Object.keys(state.plan[iso]).length) state.plan[iso]=Object.assign({}, i<5?weekday:weekend);
+  }
+  save(); render();
+}
+function bump(iso,sub,delta){
+  const day=state.plan[iso]=state.plan[iso]||{};
+  day[sub]=Math.max(0,Math.min(40,(day[sub]||0)+delta));
+  save(); render();
+}
+
+function screenPlan(p){
+  p.append(el("h2",{text:"Plan your days"}));
+  p.append(el("p",{class:"lede",text:"Pick a day and set how many lessons you'll finish in each subject. Your plan adds up below."}));
+  if(blocked(p)) return;
+  const chips=el("div",{class:"chips"});
+  for(let i=0;i<7;i++){
+    const iso=addDays(MONDAY,i), past=isPast(iso);
+    const xp=past?actualDay(iso):plannedDay(iso);
+    const c=el("button",{class:"chip"+(past?" past":""),type:"button","aria-pressed":String(iso===state.planDay),"aria-label":`${DOW_LONG[i]}, ${fmt(xp)} XP ${past?"done":"planned"}`},
+      [el("span",{class:"d",text:DOW[i]}),el("span",{class:"x",text:xp?fmt(xp):"–"})]);
+    c.addEventListener("click",()=>{ state.planDay=iso; render(); });
+    chips.append(c);
+  }
+  p.append(chips);
+  const iso=state.planDay, di=dowIndex(iso), past=isPast(iso);
+  p.append(el("div",{class:"eyebrow",text:`${DOW_LONG[di]}, ${niceDate(iso)}${past?" · done":iso===TODAY?" · today":""}`}));
+  const rows=el("div",{class:"rows"});
+  COUNTING.forEach(s=>{
+    const r=rate(s), sw=el("span",{class:"sw"}); sw.style.background=COLOR[s];
+    if(past){
+      const v=actual(iso,s);
+      rows.append(el("div",{class:"prow"},[sw,el("div",{class:"what"},[el("b",{text:s})]),el("span",{class:"num",text:`${fmt(v)} XP`})]));
+    }else{
+      const n=(state.plan[iso]||{})[s]||0;
+      const minus=el("button",{class:"step",type:"button","aria-label":`One fewer ${s} lesson`,text:"−"});
+      const plus=el("button",{class:"step",type:"button","aria-label":`One more ${s} lesson`,text:"+"});
+      minus.addEventListener("click",()=>bump(iso,s,-1)); plus.addEventListener("click",()=>bump(iso,s,1));
+      rows.append(el("div",{class:"prow"},[sw,
+        el("div",{class:"what"},[el("b",{text:s}),el("span",{class:"meta",text:`${n} completed ${plural(n,r.unit)}* ≈ ${fmt(n*r.xp)} XP`})]),
+        el("div",{class:"counter"},[minus,el("span",{class:"n",text:String(n)}),plus])]));
+    }
+  });
+  p.append(rows);
+  if(!past && di<5){
+    const missing=COUNTING.filter(s=>!((state.plan[iso]||{})[s]));
+    if(missing.length && missing.length<COUNTING.length) p.append(el("div",{class:"warn",text:`Nothing planned in ${missing.join(", ")}. On school days your streak needs some work in every subject.`}));
+  }
+
+  // week projection
+  let done=0, planned=0;
+  for(let i=0;i<7;i++){ const d=addDays(MONDAY,i); if(isPast(d)) done+=actualDay(d); else planned+=plannedDay(d); }
+  const proj=done+planned;
+  const box=el("div",{class:"plan"});
+  box.append(el("div",{class:"eyebrow",text:"Your week with this plan"}));
+  box.append(el("div",{class:"big num",text:`${fmt(proj)} / 600 XP`}));
+  const bar=el("div",{class:"bar"}); const a=el("i"), b=el("i",{class:"plan"});
+  a.style.width=Math.min(100,done/GOAL*100)+"%"; a.style.background="var(--accent)";
+  b.style.width=Math.min(100-Math.min(100,done/GOAL*100),planned/GOAL*100)+"%";
+  bar.append(a,b); box.append(bar);
+  box.append(el("div",{text: proj>=GOAL ? `That clears 600 with ${fmt(proj-GOAL)} to spare.` : `${fmt(GOAL-proj)} XP short of 600. Add a few lessons somewhere.`}));
+  const t=state.target && summits().find(x=>x.subject===state.target);
+  if(t){
+    if(t.toGo===0) box.append(el("div",{text:`${t.testName}: ready now.`}));
+    else{
+      let left=t.toGo, hit=null;
+      for(let i=TODAY_I;i<7;i++){ left-=plannedXp(addDays(MONDAY,i),t.subject); if(left<=0){ hit=i; break; } }
+      box.append(el("div",{style:"font-weight:700",text: hit!=null
+        ? `You'd reach the ${t.testName} on ${DOW_LONG[hit]}. Take it first thing the next day.`
+        : `${t.testName}: this plan leaves ${fmt(left)} XP to go after Sunday.`}));
+    }
+  }
+  p.append(box);
+  const actions=el("div",{class:"actions"});
+  const fill=el("button",{class:"btn small",type:"button",text:"Fill empty days with a starter plan"}); fill.addEventListener("click",starterPlan);
+  const copy=el("button",{class:"btn small",type:"button",text:"Copy my plan"}); copy.addEventListener("click",()=>copyPlan(copy));
+  actions.append(fill,copy); p.append(actions);
+  p.append(el("p",{class:"foot",text:STAR+" Your plan saves on this computer only."}));
+}
+
+function planText(){
+  const lines=[`My plan, week of ${niceDate(MONDAY)}`];
+  const t=state.target && summits().find(x=>x.subject===state.target);
+  if(t) lines.push(`Going for: ${t.testName} (${fmt(t.toGo)} XP to go)`);
+  for(let i=TODAY_I;i<7;i++){
+    const iso=addDays(MONDAY,i), d=state.plan[iso]||{};
+    const parts=COUNTING.filter(s=>d[s]).map(s=>`${s} ${d[s]}`);
+    lines.push(`${DOW[i]}: ${parts.length?parts.join(", "):"nothing planned"} (≈${fmt(plannedDay(iso))} XP)`);
+  }
+  lines.push("Numbers are completed lessons.");
+  return lines.join("\n");
+}
+function copyPlan(btn){
+  const text=planText();
+  const done=()=>{ btn.textContent="Copied"; setTimeout(()=>{ btn.textContent="Copy my plan"; },1800); };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done,()=>fallback(text));
+  else fallback(text);
+}
+function fallback(text){
+  const ta=el("textarea",{rows:"8",style:"width:100%;font:inherit"}); ta.value=text;
+  $("#panel").append(ta); ta.focus(); ta.select();
+}
+
+function screenRules(p){
+  p.append(el("h2",{text:"When your test shows up"}));
+  p.append(el("p",{class:"lede",text:"A test is worth more than any lesson, so give it your best start."}));
+  const ol=el("ol",{class:"rules"});
+  [["1","Take it first thing the next day.","Don't squeeze it in at the end of a long day. Start the next day with it, or do a quick FastMath or Vocab warm-up and then the test."],
+   ["2","90% passes and pays double.","Under 90% you earn half and it comes back as a retake. Slow and careful beats fast."],
+   ["3","Test XP counts toward your 600.","A passed test can be a big chunk of your week."]]
+   .forEach(r=>ol.append(el("li",{},[el("span",{class:"n",text:r[0]}),el("div",{},[el("strong",{text:r[1]}),el("span",{class:"meta",text:r[2]})])])));
+  p.append(ol);
+  const t=state.target && summits().find(x=>x.subject===state.target);
+  if(t) p.append(el("div",{class:"note",text:`This week you're going for the ${t.testName}, ${t.toGo===0?"ready now":fmt(t.toGo)+" XP to go"}.`}));
+}
+
+const SCREENS=[screenWeek,screenSummits,screenPick,screenPlan,screenRules];
+function render(){
+  const p=$("#panel"); p.replaceChildren(); SCREENS[state.step](p);
+  document.querySelectorAll("#steps span").forEach((s,i)=>s.classList.toggle("on",i<=state.step));
+  $("#back").disabled=state.step===0;
+  $("#next").textContent=state.step===SCREENS.length-1?"Back to start":"Next";
+}
+$("#back").addEventListener("click",()=>{ if(state.step>0){ state.step--; render(); window.scrollTo(0,0); } });
+$("#next").addEventListener("click",()=>{ state.step=state.step===SCREENS.length-1?0:state.step+1; render(); window.scrollTo(0,0); });
+render(); boot();
+})();
+</script>
+</body>
+</html>
