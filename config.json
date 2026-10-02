@@ -71,5 +71,14 @@
       "testName": "Geometry end-of-course test",
       "label": "Math Academy Geometry"
     }
-  ]
+  ],
+  "weeklyCaps": {
+    "Math": 125,
+    "Reading": 125,
+    "Language": 125,
+    "Science": 125,
+    "Vocabulary": 50,
+    "FastMath": 50
+  },
+  "weeklyCapsNote": "Capped as if the weekly goal is 600 (Eric, 2026-10-02): each subject counts up to 125, Vocabulary and FastMath up to 50. Writing never counts. TBA's own weekly figure uses 7-day caps (175/70), so it reads higher."
 }

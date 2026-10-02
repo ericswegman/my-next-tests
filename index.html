@@ -194,22 +194,32 @@ function setFresh(){
 
 /* ---------- derived ---------- */
 function actual(iso,sub){ const d=state.data && state.data.days[iso]; return d ? (d[sub]||0) : 0; }
-function actualDay(iso){ return COUNTING.reduce((a,s)=>a+actual(iso,s),0); }
+function cap(sub){ return (state.cfg && state.cfg.weeklyCaps && state.cfg.weeklyCaps[sub]) || Infinity; }
+// XP that counts toward 600: each subject counts until its weekly goal is full, in day order.
+function countedWeek(monday){
+  const days={}, used={};
+  for(let i=0;i<7;i++){
+    const iso=addDays(monday,i); days[iso]={};
+    COUNTING.forEach(s=>{ const room=Math.max(0,cap(s)-(used[s]||0)); const c=Math.min(actual(iso,s),room); days[iso][s]=c; used[s]=(used[s]||0)+c; });
+  }
+  return {days, used};
+}
+function countedDay(cw,iso){ return COUNTING.reduce((a,s)=>a+(cw.days[iso][s]||0),0); }
 function rate(sub){ return (state.cfg && state.cfg.rates[sub]) || {xp:10,unit:"lessons"}; }
 function plannedXp(iso,sub){ const p=state.plan[iso]; return p && p[sub] ? p[sub]*rate(sub).xp : 0; }
 function plannedDay(iso){ return COUNTING.reduce((a,s)=>a+plannedXp(iso,s),0); }
 function isPast(iso){ return iso < TODAY; }
 function weekDays(){
-  const out=[];
+  const out=[], cw=countedWeek(MONDAY);
   for(let i=0;i<7;i++){
     const iso=addDays(MONDAY,i);
     const parts=[]; let total=0;
-    COUNTING.forEach(s=>{ const v=actual(iso,s); if(v>0){ total+=v; parts.push({s,v}); } });
+    COUNTING.forEach(s=>{ const v=cw.days[iso][s]; if(v>0){ total+=v; parts.push({s,v}); } });
     out.push({iso,i,total,parts,future:iso>TODAY});
   }
   return out;
 }
-function lastWeekTotal(){ let t=0; for(let i=0;i<7;i++) t+=actualDay(addDays(PREV_MONDAY,i)); return t; }
+function lastWeekTotal(){ const cw=countedWeek(PREV_MONDAY); return COUNTING.reduce((a,s)=>a+(cw.used[s]||0),0); }
 function summits(){
   if(!state.cfg||!state.data) return [];
   return state.cfg.courses.map(c=>{
@@ -234,7 +244,7 @@ function blocked(p){
 
 function screenWeek(p){
   p.append(el("h2",{text:"Your week, Monday to Sunday"}));
-  p.append(el("p",{class:"lede",text:"Every day counts, weekends too. Here's how this week is stacking up toward 600 XP. Tests count."}));
+  p.append(el("p",{class:"lede",text:"Every day counts, weekends too. Here's the XP that counts toward your 600 this week. Tests count. Each subject only counts up to its weekly goal, and Writing doesn't count."}));
   if(blocked(p)) return;
   const days=weekDays();
   const total=days.reduce((a,d)=>a+d.total,0);
@@ -255,6 +265,15 @@ function screenWeek(p){
   });
   p.append(grid);
   const lg=el("div",{class:"legend"}); COUNTING.forEach(s=>{ const b=el("b"); b.style.background=COLOR[s]; lg.append(el("span",{},[b,s])); }); p.append(lg);
+  const cw=countedWeek(MONDAY);
+  const fill=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:"How full each subject is this week"})]);
+  COUNTING.forEach(s=>{
+    const u=cw.used[s]||0, c=cap(s), full=u>=c;
+    const raw=COUNTING.indexOf(s)>=0 ? [0,1,2,3,4,5,6].reduce((a,i)=>a+actual(addDays(MONDAY,i),s),0) : 0;
+    const right = full ? (raw>c ? `full · ${fmt(raw-c)} extra won't count` : "full") : `${fmt(c-u)} more counts`;
+    fill.append(el("div",{class:"tline"},[el("span",{text:`${s}  ${fmt(u)} / ${fmt(c)}`}),el("span",{class:"pill "+(full?"pass":""),text:right})]));
+  });
+  p.append(fill);
   const wk=state.data.tests.filter(t=>t.d>=MONDAY);
   if(wk.length){
     const box=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:"Tests you took this week"})]);
@@ -353,7 +372,7 @@ function screenPlan(p){
   const chips=el("div",{class:"chips"});
   for(let i=0;i<7;i++){
     const iso=addDays(MONDAY,i), past=isPast(iso);
-    const xp=past?actualDay(iso):plannedDay(iso);
+    const xp=past?countedDay(countedWeek(MONDAY),iso):plannedDay(iso);
     const c=el("button",{class:"chip"+(past?" past":""),type:"button","aria-pressed":String(iso===state.planDay),"aria-label":`${DOW_LONG[i]}, ${fmt(xp)} XP ${past?"done":"planned"}`},
       [el("span",{class:"d",text:DOW[i]}),el("span",{class:"x",text:xp?fmt(xp):"–"})]);
     c.addEventListener("click",()=>{ state.planDay=iso; render(); });
@@ -366,7 +385,7 @@ function screenPlan(p){
   COUNTING.forEach(s=>{
     const r=rate(s), sw=el("span",{class:"sw"}); sw.style.background=COLOR[s];
     if(past){
-      const v=actual(iso,s);
+      const v=countedWeek(MONDAY).days[iso][s]||0;
       rows.append(el("div",{class:"prow"},[sw,el("div",{class:"what"},[el("b",{text:s})]),el("span",{class:"num",text:`${fmt(v)} XP`})]));
     }else{
       const n=(state.plan[iso]||{})[s]||0;
@@ -385,9 +404,11 @@ function screenPlan(p){
   }
 
   // week projection
-  let done=0, planned=0;
-  for(let i=0;i<7;i++){ const d=addDays(MONDAY,i); if(isPast(d)) done+=actualDay(d); else planned+=plannedDay(d); }
+  const cwp=countedWeek(MONDAY), usedP={}; let done=0, planned=0;
+  for(let i=0;i<7;i++){ const d=addDays(MONDAY,i); if(isPast(d)){ COUNTING.forEach(s=>{ const v=cwp.days[d][s]||0; done+=v; usedP[s]=(usedP[s]||0)+v; }); } }
+  for(let i=0;i<7;i++){ const d=addDays(MONDAY,i); if(!isPast(d)){ COUNTING.forEach(s=>{ const room=Math.max(0,cap(s)-(usedP[s]||0)); const v=Math.min(plannedXp(d,s),room); planned+=v; usedP[s]=(usedP[s]||0)+v; }); } }
   const proj=done+planned;
+  const overfull=COUNTING.filter(s=>{ let want=0; for(let i=0;i<7;i++){ const d=addDays(MONDAY,i); if(!isPast(d)) want+=plannedXp(d,s); } return want>0 && (usedP[s]||0)>=cap(s) && (cwp.used[s]||0)+want>cap(s); });
   const box=el("div",{class:"plan"});
   box.append(el("div",{class:"eyebrow",text:"Your week with this plan"}));
   box.append(el("div",{class:"big num",text:`${fmt(proj)} / 600 XP`}));
@@ -407,6 +428,7 @@ function screenPlan(p){
         : `${t.testName}: this plan leaves ${fmt(left)} XP to go after Sunday.`}));
     }
   }
+  if(overfull.length) box.append(el("div",{class:"meta",style:"color:var(--ink)",text:`${overfull.join(", ")} will be full this week, so extra lessons there won't count toward 600. Move some to another subject.`}));
   p.append(box);
   const actions=el("div",{class:"actions"});
   const fill=el("button",{class:"btn small",type:"button",text:"Fill empty days with a starter plan"}); fill.addEventListener("click",starterPlan);
