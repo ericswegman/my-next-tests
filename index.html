@@ -57,6 +57,8 @@ button{font:inherit;cursor:pointer;color:inherit}
 .col{width:100%;max-width:44px;height:120px;background:var(--track);border-radius:6px;display:flex;flex-direction:column-reverse;overflow:hidden}
 .col i{display:block;width:100%}
 .day .lab{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.day .xtra{font-family:var(--mono);font-size:11px;color:var(--muted)}
+i.extra,b.extra{background:repeating-linear-gradient(45deg,var(--c) 0 4px,transparent 4px 8px)!important;opacity:.7}
 .day .val{font-family:var(--mono);font-size:13px;font-weight:700;min-height:1.2em}
 .day.today .lab{color:var(--ink);font-weight:700}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
@@ -276,15 +278,23 @@ function screenWeek(p){
 }
 
 function drawWeek(p,monday,days){
-  const max=Math.max(150,...days.map(d=>d.total));
+  // extra = XP earned in a subject after it was already full; real work, but it didn't count toward 600
+  days.forEach(d=>{ d.extra=COUNTING.map(s=>({s,v:actual(d.iso,s)-(d.parts.find(x=>x.s===s)||{v:0}).v})).filter(x=>x.v>0); d.extraTotal=d.extra.reduce((a,x)=>a+x.v,0); });
+  const max=Math.max(150,...days.map(d=>d.total+d.extraTotal));
   const grid=el("div",{class:"days"});
+  let anyExtra=false;
   days.forEach(d=>{
     const col=el("div",{class:"col"});
     d.parts.forEach(x=>{ const i=el("i",{title:`${x.s} ${fmt(x.v)}`}); i.style.height=(x.v/max*100)+"%"; i.style.background=COLOR[x.s]; col.append(i); });
-    grid.append(el("div",{class:"day"+(d.iso===TODAY?" today":"")},[el("span",{class:"val",text:d.future?"":fmt(d.total)}),col,el("span",{class:"lab",text:DOW[d.i]})]));
+    d.extra.forEach(x=>{ anyExtra=true; const i=el("i",{class:"extra",title:`${x.s} ${fmt(x.v)} (didn't count)`}); i.style.height=(x.v/max*100)+"%"; i.style.setProperty("--c",COLOR[x.s]); col.append(i); });
+    const kids=[el("span",{class:"val",text:d.future?"":fmt(d.total)}),col,el("span",{class:"lab",text:DOW[d.i]})];
+    kids.push(el("span",{class:"xtra",text:d.extraTotal>0?`+${fmt(d.extraTotal)}`:"\u00a0"}));
+    grid.append(el("div",{class:"day"+(d.iso===TODAY?" today":"")},kids));
   });
   p.append(grid);
-  const lg=el("div",{class:"legend"}); COUNTING.forEach(s=>{ const b=el("b"); b.style.background=COLOR[s]; lg.append(el("span",{},[b,s])); }); p.append(lg);
+  const lg=el("div",{class:"legend"}); COUNTING.forEach(s=>{ const b=el("b"); b.style.background=COLOR[s]; lg.append(el("span",{},[b,s])); });
+  if(anyExtra){ const b=el("b",{class:"extra"}); b.style.setProperty("--c","var(--muted)"); lg.append(el("span",{},[b,"Striped: work that didn't count (subject was already full). +number under a day = that XP."])); }
+  p.append(lg);
   const past=monday<MONDAY, cw=countedWeek(monday);
   const fill=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:past?"How full each subject got":"How full each subject is this week"})]);
   COUNTING.forEach(s=>{
