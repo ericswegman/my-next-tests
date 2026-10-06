@@ -112,7 +112,7 @@ button{font:inherit;cursor:pointer;color:inherit}
     </div>
     <div class="fresh" id="fresh">Loading your numbers…</div>
   </header>
-  <div class="steps" id="steps" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="steps" id="steps" aria-hidden="true"></div>
   <section class="panel" id="panel" aria-live="polite"></section>
   <div class="nav">
     <button class="btn" id="back" type="button">Back</button>
@@ -209,10 +209,11 @@ function rate(sub){ return (state.cfg && state.cfg.rates[sub]) || {xp:10,unit:"l
 function plannedXp(iso,sub){ const p=state.plan[iso]; return p && p[sub] ? p[sub]*rate(sub).xp : 0; }
 function plannedDay(iso){ return COUNTING.reduce((a,s)=>a+plannedXp(iso,s),0); }
 function isPast(iso){ return iso < TODAY; }
-function weekDays(){
-  const out=[], cw=countedWeek(MONDAY);
+function weekDays(monday){
+  monday=monday||MONDAY;
+  const out=[], cw=countedWeek(monday);
   for(let i=0;i<7;i++){
-    const iso=addDays(MONDAY,i);
+    const iso=addDays(monday,i);
     const parts=[]; let total=0;
     COUNTING.forEach(s=>{ const v=cw.days[iso][s]; if(v>0){ total+=v; parts.push({s,v}); } });
     out.push({iso,i,total,parts,future:iso>TODAY});
@@ -256,6 +257,11 @@ function screenWeek(p){
   p.append(bar);
   p.append(el("p",{style:"margin:0;font-weight:700",text: left===0 ? "You've cleared 600 this week. Anything more is extra."
     : `${fmt(left)} XP to go with ${DAYS_LEFT} ${plural(DAYS_LEFT,"days")} left, today included. That's about ${fmt(Math.ceil(left/DAYS_LEFT))} a day.`}));
+  drawWeek(p,MONDAY,days);
+  p.append(el("p",{class:"meta",style:"margin:0",text:`Last week you finished on ${fmt(lastWeekTotal())} XP. Tap Back to see how it went.`}));
+}
+
+function drawWeek(p,monday,days){
   const max=Math.max(150,...days.map(d=>d.total));
   const grid=el("div",{class:"days"});
   days.forEach(d=>{
@@ -265,18 +271,18 @@ function screenWeek(p){
   });
   p.append(grid);
   const lg=el("div",{class:"legend"}); COUNTING.forEach(s=>{ const b=el("b"); b.style.background=COLOR[s]; lg.append(el("span",{},[b,s])); }); p.append(lg);
-  const cw=countedWeek(MONDAY);
-  const fill=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:"How full each subject is this week"})]);
+  const past=monday<MONDAY, cw=countedWeek(monday);
+  const fill=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:past?"How full each subject got":"How full each subject is this week"})]);
   COUNTING.forEach(s=>{
     const u=cw.used[s]||0, c=cap(s), full=u>=c;
-    const raw=COUNTING.indexOf(s)>=0 ? [0,1,2,3,4,5,6].reduce((a,i)=>a+actual(addDays(MONDAY,i),s),0) : 0;
-    const right = full ? (raw>c ? `full · ${fmt(raw-c)} extra won't count` : "full") : `${fmt(c-u)} more counts`;
+    const raw=rawWeek(monday,s);
+    const right = full ? (raw>c ? `full · ${fmt(raw-c)} extra ${past?"didn't":"won't"} count` : "full") : past ? `${fmt(c-u)} left unused` : `${fmt(c-u)} more counts`;
     fill.append(el("div",{class:"tline"},[el("span",{text:`${s}  ${fmt(u)} / ${fmt(c)}`}),el("span",{class:"pill "+(full?"pass":""),text:right})]));
   });
   p.append(fill);
-  const wk=state.data.tests.filter(t=>t.d>=MONDAY);
+  const end=addDays(monday,7), wk=state.data.tests.filter(t=>t.d>=monday && t.d<end);
   if(wk.length){
-    const box=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:"Tests you took this week"})]);
+    const box=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:past?"Tests you took":"Tests you took this week"})]);
     wk.forEach(t=>{
       const passed=t.pct!=null&&t.pct>=90;
       box.append(el("div",{class:"tline"},[
@@ -286,7 +292,65 @@ function screenWeek(p){
     });
     p.append(box);
   }
-  p.append(el("p",{class:"meta",style:"margin:0",text:`Last week you finished on ${fmt(lastWeekTotal())} XP.`}));
+}
+function rawWeek(monday,s){ return [0,1,2,3,4,5,6].reduce((a,i)=>a+actual(addDays(monday,i),s),0); }
+
+function screenLastWeek(p){
+  const sun=addDays(PREV_MONDAY,6);
+  p.append(el("h2",{text:"How last week went"}));
+  p.append(el("p",{class:"lede",text:`Monday ${niceDate(PREV_MONDAY)} to Sunday ${niceDate(sun)}. Only XP that counts toward 600 is shown: up to 125 per subject, 50 for Vocabulary and FastMath.`}));
+  if(blocked(p)) return;
+  const days=weekDays(PREV_MONDAY), cw=countedWeek(PREV_MONDAY);
+  const total=days.reduce((a,d)=>a+d.total,0);
+  p.append(el("div",{class:"total"},[el("span",{class:"big num",text:fmt(total)}),el("span",{class:"of",text:"/ 600 XP"}),
+    el("span",{class:"pill "+(total>=GOAL?"pass":"half"),text:total>=GOAL?"goal hit":`${fmt(GOAL-total)} short`})]));
+  const bar=el("div",{class:"bar",role:"img","aria-label":fmt(total)+" of 600 XP"});
+  COUNTING.forEach(s=>{ const v=cw.used[s]||0; if(v){ const i=el("i"); i.style.width=Math.min(100,v/GOAL*100)+"%"; i.style.background=COLOR[s]; bar.append(i); } });
+  p.append(bar);
+  drawWeek(p,PREV_MONDAY,days);
+
+  // what the numbers say
+  const notes=el("div",{class:"tests"},[el("div",{class:"eyebrow",text:"What the numbers say"})]);
+  const say=(t)=>notes.append(el("div",{class:"tline"},[el("span",{text:t})]));
+  const end=addDays(PREV_MONDAY,7);
+  const passed=state.data.tests.filter(t=>t.d>=PREV_MONDAY&&t.d<end&&t.pct!=null&&t.pct>=90);
+  if(passed.length) say(`You passed ${passed.length} ${plural(passed.length,"tests")}: ${passed.map(t=>t.name).join(", ")}.`);
+  const full=COUNTING.filter(s=>(cw.used[s]||0)>=cap(s));
+  if(full.length) say(`${full.join(" and ")} ${full.length===1?"was":"were"} full.`);
+  const over=COUNTING.map(s=>({s,x:rawWeek(PREV_MONDAY,s)-cap(s)})).filter(o=>o.x>0);
+  over.forEach(o=>{
+    const wkend=[5,6].reduce((a,i)=>{ const d=addDays(PREV_MONDAY,i); return a+actual(d,o.s)-(cw.days[d][o.s]||0); },0);
+    say(`${fmt(o.x)} ${o.s} XP went past ${cap(o.s)} and didn't count${wkend>0?`, including ${fmt(wkend)} from the weekend`:""}.`);
+  });
+  const zero=COUNTING.filter(s=>!(cw.used[s]));
+  if(zero.length) say(`${zero.join(" and ")}: nothing all week. That's ${fmt(zero.reduce((a,s)=>a+cap(s),0))} XP that was there for the taking.`);
+  let allSix=0, onlyTest=0;
+  for(let i=0;i<5;i++){
+    const d=addDays(PREV_MONDAY,i);
+    if(COUNTING.every(s=>actual(d,s)>0)) allSix++;
+    const dayTests=state.data.tests.filter(t=>t.d===d&&COUNTING.indexOf(t.s)>=0).reduce((a,t)=>a+t.xp,0);
+    const dayAll=COUNTING.reduce((a,s)=>a+actual(d,s),0);
+    if(dayAll>0 && dayTests>=dayAll) onlyTest++;
+  }
+  say(`School days with work in all six subjects: ${allSix} of 5. Your streak needs all six every school day.`);
+  if(onlyTest) say(`${onlyTest} school ${plural(onlyTest,"days")} had a test and nothing else.`);
+  p.append(notes);
+
+  // the fix for this week
+  const room=COUNTING.map(s=>({s,r:Math.max(0,cap(s)-(cw.used[s]||0))})).filter(o=>o.r>0);
+  if(total<GOAL){
+    const box=el("div",{class:"plan"});
+    box.append(el("div",{class:"eyebrow",text:"Where the missing XP was"}));
+    box.append(el("div",{text:`Every XP you needed was in subjects that still had room: ${room.map(o=>`${o.s} ${fmt(o.r)}`).join(", ")}. Spread across the week, that's what turns ${fmt(total)} into 600.`}));
+    p.append(box);
+  }
+
+  // their plan vs what happened, if one was saved on this computer
+  let prev=null; try{ prev=JSON.parse(localStorage.getItem("next-tests:v1:"+PREV_MONDAY)); }catch(e){}
+  if(prev && prev.plan && Object.keys(prev.plan).length){
+    let planned=0; Object.keys(prev.plan).forEach(d=>COUNTING.forEach(s=>{ planned+=((prev.plan[d]||{})[s]||0)*rate(s).xp; }));
+    p.append(el("p",{class:"meta",style:"margin:0",text:`Your plan for that week added up to about ${fmt(planned)} XP. You got ${fmt(total)} that counted.`}));
+  }
 }
 
 function summitCard(x){
@@ -473,7 +537,8 @@ function screenRules(p){
   if(t) p.append(el("div",{class:"note",text:`This week you're going for the ${t.testName}, ${t.toGo===0?"ready now":fmt(t.toGo)+" XP to go"}.`}));
 }
 
-const SCREENS=[screenWeek,screenSummits,screenPick,screenPlan,screenRules];
+const SCREENS=[screenLastWeek,screenWeek,screenSummits,screenPick,screenPlan,screenRules];
+$("#steps").append(...SCREENS.map(()=>el("span")));
 function render(){
   const p=$("#panel"); p.replaceChildren(); SCREENS[state.step](p);
   document.querySelectorAll("#steps span").forEach((s,i)=>s.classList.toggle("on",i<=state.step));
