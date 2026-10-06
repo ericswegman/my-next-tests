@@ -73,12 +73,17 @@
     }
   ],
   "weeklyCaps": {
-    "Math": 125,
-    "Reading": 125,
-    "Language": 125,
-    "Science": 125,
-    "Vocabulary": 50,
-    "FastMath": 50
+    "Reading": 175,
+    "Math": 85,
+    "Language": 85,
+    "Science": 85,
+    "Vocabulary": 35,
+    "FastMath": 35
   },
-  "weeklyCapsNote": "Capped as if the weekly goal is 600 (Eric, 2026-10-02): each subject counts up to 125, Vocabulary and FastMath up to 50. Writing never counts. TBA's own weekly figure uses 7-day caps (175/70), so it reads higher."
+  "weeklyCapsNote": "Since 2026-10-06 (Eric): goal 500. Reading counts up to 175 because Lorenzo is pushing Reading for MAP; the other 325 is split in proportion to the daily goals (85/85/85/35/35). Writing never counts.",
+  "weeklyGoal": 500,
+  "goals": {
+    "mapReading": "95th percentile on your next test"
+  },
+  "pinFirst": "Reading"
 }

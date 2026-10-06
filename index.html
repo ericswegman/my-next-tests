@@ -117,7 +117,7 @@ i.extra,b.extra{background:repeating-linear-gradient(45deg,var(--c) 0 4px,transp
       <div class="eyebrow" id="weekLabel">This week</div>
       <h1>Lorenzo's Next Tests</h1>
     </div>
-    <div class="fresh" id="fresh">Loading your numbers…</div>
+    <div class="fresh"><span id="fresh">Loading your numbers…</span> <button class="btn small" id="reload" type="button">Get latest numbers</button></div>
   </header>
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-week" aria-controls="view-week" type="button">This week</button>
@@ -139,7 +139,7 @@ i.extra,b.extra{background:repeating-linear-gradient(45deg,var(--c) 0 4px,transp
 <script>
 (function(){
 "use strict";
-const GOAL = 600;
+let GOAL = 600;
 const COUNTING = ["Math","Reading","Language","Science","Vocabulary","FastMath"];
 const COLOR = {Math:"var(--math)",FastMath:"var(--fastmath)",Reading:"var(--reading)",Language:"var(--language)",Science:"var(--science)",Vocabulary:"var(--vocab)",Writing:"var(--writing)"};
 const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -196,7 +196,7 @@ async function boot(){
       fetch("config.json",{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("config"); return r.json(); }),
       fetch("data.json",{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("data"); return r.json(); })
     ]);
-    state.cfg=cfg; state.data=shape(data.rows||[]); state.updatedAt=data.updatedAt; state.generatedFor=data.generatedFor;
+    state.cfg=cfg; GOAL=cfg.weeklyGoal||600; state.data=shape(data.rows||[]); state.updatedAt=data.updatedAt; state.generatedFor=data.generatedFor;
   }catch(e){ state.error=e; }
   setFresh(); render();
 }
@@ -248,7 +248,7 @@ function summits(){
     const r=rate(c.subject);
     const lessons=toGo>0?Math.max(1,Math.ceil(toGo/r.xp)):0;
     return Object.assign({},c,{earned,mark,toGo,perDay,days,lessons,unit:r.unit});
-  }).sort((a,b)=>a.toGo-b.toGo);
+  }).sort((a,b)=>{ const pin=state.cfg.pinFirst; if(pin){ if(a.subject===pin&&b.subject!==pin) return -1; if(b.subject===pin&&a.subject!==pin) return 1; } return a.toGo-b.toGo; });
 }
 const lessonsText=(n,unit)=>`${n} completed ${plural(n,unit)}*`;
 
@@ -261,17 +261,19 @@ function blocked(p){
 
 function screenWeek(p){
   p.append(el("h2",{text:"Your week, Monday to Sunday"}));
-  p.append(el("p",{class:"lede",text:"Every day counts, weekends too. Here's the XP that counts toward your 600 this week. Tests count. Each subject only counts up to its weekly goal, and Writing doesn't count."}));
+  p.append(el("p",{class:"lede",text:`Every day counts, weekends too. Here's the XP that counts toward your ${GOAL} this week. Tests count. Reading counts up to ${cap("Reading")} because you're pushing Reading; the other subjects fill the rest. Writing doesn't count.`}));
   if(blocked(p)) return;
+  const g=state.cfg.goals||{};
+  p.append(el("div",{class:"note",text:`Your goals: ${GOAL} XP this week, with up to ${cap("Reading")} of it in Reading${g.mapReading?`. MAP Reading: ${g.mapReading}`:""}.`}));
   const days=weekDays();
   const total=days.reduce((a,d)=>a+d.total,0);
   const left=Math.max(0,GOAL-total);
-  p.append(el("div",{class:"total"},[el("span",{class:"big num",text:fmt(total)}),el("span",{class:"of",text:"/ 600 XP"})]));
-  const bar=el("div",{class:"bar",role:"img","aria-label":fmt(total)+" of 600 XP"});
+  p.append(el("div",{class:"total"},[el("span",{class:"big num",text:fmt(total)}),el("span",{class:"of",text:`/ ${GOAL} XP`})]));
+  const bar=el("div",{class:"bar",role:"img","aria-label":fmt(total)+` of ${GOAL} XP`});
   const byS={}; days.forEach(d=>d.parts.forEach(x=>{ byS[x.s]=(byS[x.s]||0)+x.v; }));
   COUNTING.forEach(s=>{ if(byS[s]){ const i=el("i"); i.style.width=Math.min(100,byS[s]/GOAL*100)+"%"; i.style.background=COLOR[s]; bar.append(i); } });
   p.append(bar);
-  p.append(el("p",{style:"margin:0;font-weight:700",text: left===0 ? "You've cleared 600 this week. Anything more is extra."
+  p.append(el("p",{style:"margin:0;font-weight:700",text: left===0 ? `You've cleared ${GOAL} this week. Anything more is extra.`
     : `${fmt(left)} XP to go with ${DAYS_LEFT} ${plural(DAYS_LEFT,"days")} left, today included. That's about ${fmt(Math.ceil(left/DAYS_LEFT))} a day.`}));
   drawWeek(p,MONDAY,days);
   p.append(el("p",{class:"meta",style:"margin:0",text:`Last week you finished on ${fmt(lastWeekTotal())} XP. Open the Last week tab to see how it went.`}));
@@ -322,13 +324,13 @@ function rawWeek(monday,s){ return [0,1,2,3,4,5,6].reduce((a,i)=>a+actual(addDay
 function screenLastWeek(p){
   const sun=addDays(PREV_MONDAY,6);
   p.append(el("h2",{text:"How last week went"}));
-  p.append(el("p",{class:"lede",text:`Monday ${niceDate(PREV_MONDAY)} to Sunday ${niceDate(sun)}. Only XP that counts toward 600 is shown: up to 125 per subject, 50 for Vocabulary and FastMath.`}));
+  p.append(el("p",{class:"lede",text:`Monday ${niceDate(PREV_MONDAY)} to Sunday ${niceDate(sun)}. Measured against your ${GOAL} goal: Reading counts up to ${cap("Reading")}, ${COUNTING.filter(x=>x!=="Reading").map(x=>x+" "+cap(x)).join(", ")}.`}));
   if(blocked(p)) return;
   const days=weekDays(PREV_MONDAY), cw=countedWeek(PREV_MONDAY);
   const total=days.reduce((a,d)=>a+d.total,0);
-  p.append(el("div",{class:"total"},[el("span",{class:"big num",text:fmt(total)}),el("span",{class:"of",text:"/ 600 XP"}),
+  p.append(el("div",{class:"total"},[el("span",{class:"big num",text:fmt(total)}),el("span",{class:"of",text:`/ ${GOAL} XP`}),
     el("span",{class:"pill "+(total>=GOAL?"pass":"half"),text:total>=GOAL?"goal hit":`${fmt(GOAL-total)} short`})]));
-  const bar=el("div",{class:"bar",role:"img","aria-label":fmt(total)+" of 600 XP"});
+  const bar=el("div",{class:"bar",role:"img","aria-label":fmt(total)+` of ${GOAL} XP`});
   COUNTING.forEach(s=>{ const v=cw.used[s]||0; if(v){ const i=el("i"); i.style.width=Math.min(100,v/GOAL*100)+"%"; i.style.background=COLOR[s]; bar.append(i); } });
   p.append(bar);
   drawWeek(p,PREV_MONDAY,days);
@@ -340,14 +342,15 @@ function screenLastWeek(p){
   const passed=state.data.tests.filter(t=>t.d>=PREV_MONDAY&&t.d<end&&t.pct!=null&&t.pct>=90);
   if(passed.length) say(`You passed ${passed.length} ${plural(passed.length,"tests")}: ${passed.map(t=>t.name).join(", ")}.`);
   const full=COUNTING.filter(s=>(cw.used[s]||0)>=cap(s));
-  if(full.length) say(`${full.join(" and ")} ${full.length===1?"was":"were"} full.`);
+  const andList=(xs)=>xs.length<2?xs.join(""):xs.slice(0,-1).join(", ")+" and "+xs[xs.length-1];
+  if(full.length) say(`${andList(full)} ${full.length===1?"was":"were"} full.`);
   const over=COUNTING.map(s=>({s,x:rawWeek(PREV_MONDAY,s)-cap(s)})).filter(o=>o.x>0);
   over.forEach(o=>{
     const wkend=[5,6].reduce((a,i)=>{ const d=addDays(PREV_MONDAY,i); return a+actual(d,o.s)-(cw.days[d][o.s]||0); },0);
     say(`${fmt(o.x)} ${o.s} XP went past ${cap(o.s)} and didn't count${wkend>0?`, including ${fmt(wkend)} from the weekend`:""}.`);
   });
   const zero=COUNTING.filter(s=>!(cw.used[s]));
-  if(zero.length) say(`${zero.join(" and ")}: nothing all week. That's ${fmt(zero.reduce((a,s)=>a+cap(s),0))} XP that was there for the taking.`);
+  if(zero.length) say(`${andList(zero)}: nothing all week. That's ${fmt(zero.reduce((a,s)=>a+cap(s),0))} XP that was there for the taking.`);
   let allSix=0, onlyTest=0;
   for(let i=0;i<5;i++){
     const d=addDays(PREV_MONDAY,i);
@@ -365,7 +368,7 @@ function screenLastWeek(p){
   if(total<GOAL){
     const box=el("div",{class:"plan"});
     box.append(el("div",{class:"eyebrow",text:"Where the missing XP was"}));
-    box.append(el("div",{text:`Every XP you needed was in subjects that still had room: ${room.map(o=>`${o.s} ${fmt(o.r)}`).join(", ")}. Spread across the week, that's what turns ${fmt(total)} into 600.`}));
+    box.append(el("div",{text:`Every XP you needed was in subjects that still had room: ${room.map(o=>`${o.s} ${fmt(o.r)}`).join(", ")}. Spread across the week, that's what turns ${fmt(total)} into ${GOAL}.`}));
     p.append(box);
   }
 
@@ -396,7 +399,7 @@ function summitCard(x){
 
 function screenSummits(p){
   p.append(el("h2",{text:"How far you are from each test"}));
-  p.append(el("p",{class:"lede",text:"Closest first. Finish the XP in a course and its test unlocks."}));
+  p.append(el("p",{class:"lede",text:"Reading first, since it's your focus. The rest are closest first. Finish the XP in a course and its test unlocks."}));
   if(blocked(p)) return;
   const list=el("div",{class:"list"}); summits().forEach(x=>list.append(summitCard(x))); p.append(list);
   p.append(el("p",{class:"foot",text:STAR}));
@@ -499,12 +502,12 @@ function screenPlan(p){
   const overfull=COUNTING.filter(s=>{ let want=0; for(let i=0;i<7;i++){ const d=addDays(MONDAY,i); if(!isPast(d)) want+=plannedXp(d,s); } return want>0 && (usedP[s]||0)>=cap(s) && (cwp.used[s]||0)+want>cap(s); });
   const box=el("div",{class:"plan"});
   box.append(el("div",{class:"eyebrow",text:"Your week with this plan"}));
-  box.append(el("div",{class:"big num",text:`${fmt(proj)} / 600 XP`}));
+  box.append(el("div",{class:"big num",text:`${fmt(proj)} / ${GOAL} XP`}));
   const bar=el("div",{class:"bar"}); const a=el("i"), b=el("i",{class:"plan"});
   a.style.width=Math.min(100,done/GOAL*100)+"%"; a.style.background="var(--accent)";
   b.style.width=Math.min(100-Math.min(100,done/GOAL*100),planned/GOAL*100)+"%";
   bar.append(a,b); box.append(bar);
-  box.append(el("div",{text: proj>=GOAL ? `That clears 600 with ${fmt(proj-GOAL)} to spare.` : `${fmt(GOAL-proj)} XP short of 600. Add a few lessons somewhere.`}));
+  box.append(el("div",{text: proj>=GOAL ? `That clears ${GOAL} with ${fmt(proj-GOAL)} to spare.` : `${fmt(GOAL-proj)} XP short of ${GOAL}. Add a few lessons somewhere.`}));
   const t=state.target && summits().find(x=>x.subject===state.target);
   if(t){
     if(t.toGo===0) box.append(el("div",{text:`${t.testName}: ready now.`}));
@@ -516,7 +519,7 @@ function screenPlan(p){
         : `${t.testName}: this plan leaves ${fmt(left)} XP to go after Sunday.`}));
     }
   }
-  if(overfull.length) box.append(el("div",{class:"meta",style:"color:var(--ink)",text:`${overfull.join(", ")} will be full this week, so extra lessons there won't count toward 600. Move some to another subject.`}));
+  if(overfull.length) box.append(el("div",{class:"meta",style:"color:var(--ink)",text:`${overfull.join(", ")} will be full this week, so extra lessons there won't count toward ${GOAL}. Move some to another subject.`}));
   p.append(box);
   const actions=el("div",{class:"actions"});
   const fill=el("button",{class:"btn small",type:"button",text:"Fill empty days with a starter plan"}); fill.addEventListener("click",starterPlan);
@@ -554,7 +557,7 @@ function screenRules(p){
   const ol=el("ol",{class:"rules"});
   [["1","Take it first thing the next day.","Don't squeeze it in at the end of a long day. Start the next day with it, or do a quick FastMath or Vocab warm-up and then the test."],
    ["2","90% passes and pays double.","Under 90% you earn half and it comes back as a retake. Slow and careful beats fast."],
-   ["3","Test XP counts toward your 600.","A passed test can be a big chunk of your week."]]
+   ["3",`Test XP counts toward your ${GOAL}.`,`A passed test can be a big chunk of your week, up to each subject's limit.`]]
    .forEach(r=>ol.append(el("li",{},[el("span",{class:"n",text:r[0]}),el("div",{},[el("strong",{text:r[1]}),el("span",{class:"meta",text:r[2]})])])));
   p.append(ol);
   const t=state.target && summits().find(x=>x.subject===state.target);
@@ -584,6 +587,7 @@ function render(){
 }
 $("#back").addEventListener("click",()=>{ if(state.step>0){ state.step--; render(); window.scrollTo(0,0); } });
 $("#next").addEventListener("click",()=>{ state.step=state.step===SCREENS.length-1?0:state.step+1; render(); window.scrollTo(0,0); });
+$("#reload").addEventListener("click",async()=>{ const b=$("#reload"); b.disabled=true; b.textContent="Checking…"; const before=state.updatedAt; await boot(); b.disabled=false; b.textContent= state.updatedAt===before ? "No newer numbers yet" : "Updated"; setTimeout(()=>{ b.textContent="Get latest numbers"; },2500); });
 render(); boot();
 })();
 </script>
