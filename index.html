@@ -21,6 +21,7 @@
   --accent:#7cc0e8; --accent-ink:#0b1620; --track:#243240; --good:#5fd39a; --warn:#f0b35a; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
 .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 32px;display:flex;flex-direction:column;gap:20px}
 header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 16px}
@@ -34,6 +35,10 @@ button{font:inherit;cursor:pointer;color:inherit}
 .btn:disabled{opacity:.4;cursor:default}
 .btn:focus-visible,.pick:focus-visible,.chip:focus-visible,.step:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .small{font-size:14px;padding:6px 12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:none;padding:10px 14px;font-family:var(--display);font-weight:800;font-stretch:105%;font-size:16px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .steps{display:flex;gap:6px}
 .steps span{flex:1;height:5px;border-radius:3px;background:var(--track)}
 .steps span.on{background:var(--accent)}
@@ -112,11 +117,20 @@ button{font:inherit;cursor:pointer;color:inherit}
     </div>
     <div class="fresh" id="fresh">Loading your numbers…</div>
   </header>
-  <div class="steps" id="steps" aria-hidden="true"></div>
-  <section class="panel" id="panel" aria-live="polite"></section>
-  <div class="nav">
-    <button class="btn" id="back" type="button">Back</button>
-    <button class="btn primary" id="next" type="button">Next</button>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-week" aria-controls="view-week" type="button">This week</button>
+    <button class="tab" role="tab" id="tab-last" aria-controls="view-last" type="button">Last week</button>
+  </div>
+  <div id="view-week" role="tabpanel" aria-labelledby="tab-week" style="display:flex;flex-direction:column;gap:20px">
+    <div class="steps" id="steps" aria-hidden="true"></div>
+    <section class="panel" id="panel" aria-live="polite"></section>
+    <div class="nav">
+      <button class="btn" id="back" type="button">Back</button>
+      <button class="btn primary" id="next" type="button">Next</button>
+    </div>
+  </div>
+  <div id="view-last" role="tabpanel" aria-labelledby="tab-last" hidden>
+    <section class="panel" id="lastPanel" aria-live="polite"></section>
   </div>
 </div>
 
@@ -258,7 +272,7 @@ function screenWeek(p){
   p.append(el("p",{style:"margin:0;font-weight:700",text: left===0 ? "You've cleared 600 this week. Anything more is extra."
     : `${fmt(left)} XP to go with ${DAYS_LEFT} ${plural(DAYS_LEFT,"days")} left, today included. That's about ${fmt(Math.ceil(left/DAYS_LEFT))} a day.`}));
   drawWeek(p,MONDAY,days);
-  p.append(el("p",{class:"meta",style:"margin:0",text:`Last week you finished on ${fmt(lastWeekTotal())} XP. Tap Back to see how it went.`}));
+  p.append(el("p",{class:"meta",style:"margin:0",text:`Last week you finished on ${fmt(lastWeekTotal())} XP. Open the Last week tab to see how it went.`}));
 }
 
 function drawWeek(p,monday,days){
@@ -537,9 +551,22 @@ function screenRules(p){
   if(t) p.append(el("div",{class:"note",text:`This week you're going for the ${t.testName}, ${t.toGo===0?"ready now":fmt(t.toGo)+" XP to go"}.`}));
 }
 
-const SCREENS=[screenLastWeek,screenWeek,screenSummits,screenPick,screenPlan,screenRules];
+const SCREENS=[screenWeek,screenSummits,screenPick,screenPlan,screenRules];
 $("#steps").append(...SCREENS.map(()=>el("span")));
+state.tab = location.hash==="#last-week" ? "last" : "week";
+function showTab(t){
+  state.tab=t;
+  $("#tab-week").setAttribute("aria-selected",String(t==="week")); $("#tab-last").setAttribute("aria-selected",String(t==="last"));
+  $("#view-week").hidden = t!=="week"; $("#view-last").hidden = t!=="last";
+  try{ history.replaceState(null,"",t==="last"?"#last-week":location.pathname); }catch(e){}
+  render();
+}
+$("#tab-week").addEventListener("click",()=>showTab("week"));
+$("#tab-last").addEventListener("click",()=>showTab("last"));
 function render(){
+  $("#tab-week").setAttribute("aria-selected",String(state.tab==="week")); $("#tab-last").setAttribute("aria-selected",String(state.tab==="last"));
+  $("#view-week").hidden = state.tab!=="week"; $("#view-last").hidden = state.tab!=="last";
+  const lp=$("#lastPanel"); lp.replaceChildren(); screenLastWeek(lp);
   const p=$("#panel"); p.replaceChildren(); SCREENS[state.step](p);
   document.querySelectorAll("#steps span").forEach((s,i)=>s.classList.toggle("on",i<=state.step));
   $("#back").disabled=state.step===0;
