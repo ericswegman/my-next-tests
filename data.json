@@ -1,7 +1,15 @@
 {
- "generatedFor": "2026-10-12",
- "updatedAt": "2026-10-12T20:14:50.369Z",
+ "generatedFor": "2026-10-13",
+ "updatedAt": "2026-10-13T11:44:02.349Z",
  "rows": [
+  {
+   "kind": "day",
+   "d": "2026-10-12",
+   "s": "Reading",
+   "c": "",
+   "v": "39.0",
+   "w": ""
+  },
   {
    "kind": "day",
    "d": "2026-10-08",
@@ -32,6 +40,14 @@
    "s": "Reading",
    "c": "",
    "v": "38.0",
+   "w": ""
+  },
+  {
+   "kind": "day",
+   "d": "2026-10-12",
+   "s": "Language",
+   "c": "",
+   "v": "30.0",
    "w": ""
   },
   {
@@ -132,6 +148,14 @@
   },
   {
    "kind": "day",
+   "d": "2026-10-12",
+   "s": "Vocabulary",
+   "c": "",
+   "v": "60.0",
+   "w": ""
+  },
+  {
+   "kind": "day",
    "d": "2026-10-11",
    "s": "Reading",
    "c": "",
@@ -172,6 +196,22 @@
   },
   {
    "kind": "day",
+   "d": "2026-10-12",
+   "s": "FastMath",
+   "c": "",
+   "v": "25.0",
+   "w": ""
+  },
+  {
+   "kind": "day",
+   "d": "2026-10-12",
+   "s": "Science",
+   "c": "",
+   "v": "29.0",
+   "w": ""
+  },
+  {
+   "kind": "day",
    "d": "2026-10-08",
    "s": "Science",
    "c": "",
@@ -199,7 +239,7 @@
    "d": "",
    "s": "Reading",
    "c": "Alpha Read - Grade 9",
-   "v": "276.0",
+   "v": "315.0",
    "w": ""
   },
   {
@@ -207,7 +247,7 @@
    "d": "",
    "s": "Science",
    "c": "[Timeback Learn] Science G9 hole-filling",
-   "v": "87.0",
+   "v": "116.0",
    "w": ""
   },
   {
@@ -239,7 +279,7 @@
    "d": "",
    "s": "Reading",
    "c": "",
-   "v": "276.0",
+   "v": "315.0",
    "w": ""
   },
   {
@@ -247,7 +287,7 @@
    "d": "",
    "s": "Science",
    "c": "",
-   "v": "120.0",
+   "v": "149.0",
    "w": ""
   },
   {
@@ -289,6 +329,62 @@
    "c": "Grade 4 Multiplication Fluency Test — Sequence Expansion 1252-A",
    "v": "5",
    "w": "100"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "FastMath",
+   "c": "Grade 4 Division Fluency Test",
+   "v": "5",
+   "w": "93"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "FastMath",
+   "c": "Grade 5 Subtraction Fluency Test — Sequence Expansion 1252-A",
+   "v": "5",
+   "w": "96"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "FastMath",
+   "c": "Grade 5 Multiplication Fluency Test",
+   "v": "5",
+   "w": "100"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "FastMath",
+   "c": "Grade 5 Multiplication Fluency Test — Sequence Expansion 1252-A",
+   "v": "5",
+   "w": "98"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "FastMath",
+   "c": "Grade 5 Division Fluency Test",
+   "v": "5",
+   "w": "94"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "Vocabulary",
+   "c": "Alpha Standardized Vocabulary G8.2",
+   "v": "60",
+   "w": "90"
+  },
+  {
+   "kind": "test",
+   "d": "2026-10-12",
+   "s": "Language",
+   "c": "Alpha Standardized Language G10.3",
+   "v": "30",
+   "w": "75"
   }
  ]
 }
